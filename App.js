@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import {Mapa} from './app/views/Mapa';
+import { Mapa } from './app/views/Mapa';
+import { Home } from './app/views/Home';
+
 /**
  * Modificacions al component principal d'entrada de React
  * per incloure encaminaments, però no components
@@ -17,7 +19,8 @@ function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Home">
-       <Stack.Screen name="Mapa" component={Mapa} />
+        <Stack.Screen name="Home" component={Home} />
+        <Stack.Screen name="Mapa" component={Mapa} />
       </Stack.Navigator>
     </NavigationContainer>
   );

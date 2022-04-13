@@ -1,12 +1,7 @@
 import React from 'react';
 import { StyleSheet, Dimensions, Text, View } from 'react-native';
 import MapView from 'react-native-maps';
-/**
- * Classe que hereta de Component i que implementa un component
- * per a visualitzar mapes, Fa servir routing
- * @version 1.0 05.04.2020
- * @author sergi.grau@fje.edu
- */
+
 
 const styles = StyleSheet.create({
   container: {
