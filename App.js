@@ -4,6 +4,8 @@ import {createStackNavigator} from '@react-navigation/stack';
 import {Alert, Button, Dimensions, StyleSheet, Text, View} from "react-native";
 import MapView, {Marker} from "react-native-maps";
 import * as Location from 'expo-location';
+import * as SQLite from "expo-sqlite";
+import async from "async";
 
 /**
  * Modificacions al component principal d'entrada de React
@@ -64,8 +66,19 @@ function HomeScreen({navigation}) {
         </View>
     );
 }
-
+const db = SQLite.openDatabase("db5.db");
 function Mapa() {
+    const [items, setItems] = useState([]);
+
+    useEffect(() => {
+        db.transaction((tx) => {
+            tx.executeSql(
+                `select * from markers;`,
+                [],
+                (_, { rows: { _array } }) => setItems(_array)
+            );
+        });
+    }, []);
 
     const [location, setLocation] = useState(null);
     const [errorMsg, setErrorMsg] = useState(null);
@@ -96,6 +109,45 @@ function Mapa() {
 
     }
 
+
+
+
+    console.log('Inicial');
+    /*
+    db.transaction(
+        tx => {
+            tx.executeSql("select * from markers", [], (_, {rows}) => {
+                let resuttado = rows['_array'];
+                console.log(resuttado);
+                setCount(resuttado);
+                console.log("Salida" + JSON.stringify(rows));
+            }, (t, error) => {
+                console.log(error);
+            })
+        }
+    );*/
+/*
+    function actualizarPunto(e){
+        db.transaction(
+            tx => {
+                tx.executeSql("UPDATE table\n" +
+                    "SET column_1 = ?,\n"+
+                    "WHERE\n" +
+                    "    search_condition ", [], (_, {rows}) => {
+                    let resuttado = rows['_array'];
+                    console.log(resuttado);
+                    setCount(resuttado);
+                    console.log("Salida" + JSON.stringify(rows));
+                }, (t, error) => {
+                    console.log(error);
+                })
+            }
+        );
+
+    }*/
+
+    console.log('Haz esto');
+    console.log("Pd4ro");
     return (
         <View style={styles.container}>
             <View style={[styles.box, styles.box1]}>
@@ -105,18 +157,83 @@ function Mapa() {
                 <MapView style={styles.mapStyle}
                          showsMyLocationButton={true}
                          showsUserLocation={true}>
+                    {items.map(dealer => (
+                        <MapView.Marker
+                            key={dealer["id"]}
+                            coordinate={{
+                                latitude: dealer["latitude"],
+                                longitude: dealer["Longitude"],
+                            }}
+                            draggable
+                            onDragEnd={e => actualizarPunto(e.nativeEvent)}
+                            title={dealer["Title"]}
+                            description={dealer["Descripcion"]}
+                        />
+                    ))}
+                </MapView>
 
-                </MapView></View>
+            </View>
         </View>
 
     )
         ;
+
+
 }
 
 
 const Stack = createStackNavigator();
 
 function App() {
+
+
+    const db = SQLite.openDatabase("db5.db");
+
+
+    db.transaction(tx => {
+        tx.executeSql(
+            "create table if not exists markers (id integer primary key not null, " +
+            "Title text, " +
+            "Descripcion text," +
+            "latitude real," +
+            "Longitude real," +
+            "imatge blob" +
+            ");"
+            , [], (_, {rows}) => {
+                console.log("Salida" + JSON.stringify(rows));
+            }, (t, error) => {
+                console.log("Error tabla " + error);
+            });
+    });
+    console.log('creada taula');
+    let markets = [
+        [1, "Paco comer", "Restaurant", 23.752538, -99.141926],
+        [2, "Donde enterraron a paco ", "Ex-Tumba", 40.64123948793628, -4.155716732476]];
+    db.transaction(
+        tx => {
+            tx.executeSql("insert into markers (id,Title,Descripcion,latitude,Longitude) values (?,?,?,?,?)", markets[0], (_, {rows}) => {
+                console.log("Salida" + JSON.stringify(rows));
+            }, (t, error) => {
+                console.log("Error quert 1 " + error);
+            });
+            tx.executeSql("insert into markers (id,Title,Descripcion,latitude,Longitude) values (?,?,?,?,?)", markets[1], (_, {rows}) => {
+                console.log("Salida" + JSON.stringify(rows));
+            }, (t, error) => {
+                console.log("Error quert 2 " + error);
+            });
+        }
+    );
+    db.transaction(
+        tx => {
+            tx.executeSql("select * from markers", [], (_, {rows}) => {
+                console.log("Salida" + JSON.stringify(rows));
+            }, (t, error) => {
+                console.log(error);
+            })
+        }
+    );
+
+
     return (
         <NavigationContainer>
             <Stack.Navigator initialRouteName="Inicio">
