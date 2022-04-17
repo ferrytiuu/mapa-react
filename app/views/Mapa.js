@@ -18,7 +18,7 @@ const styles = StyleSheet.create({
 const mode = 'driving'; // 'walking';
 
 
-export class Mapa extends React.Component {
+export class Map3a extends React.Component {
   coords = [{
     lat: 41.390205,
     lng: 2.174007,
@@ -40,7 +40,7 @@ export class Mapa extends React.Component {
           latitudeDelta: 0.0622,
           longitudeDelta: 0.0121,
         }}>
-          
+
           <MapView.Marker
             coordinate={{
               latitude: this.coords[0].lat,
@@ -69,7 +69,7 @@ export class Mapa extends React.Component {
 		coordinates={[
 			{  latitude: 41.390205, longitude: 2.174007, },
 			{ latitude: 41.380205, longitude: 2.175007 },
-	
+
 		]}
 		strokeColor="#000" // fallback for when `strokeColors` is not supported by the map-provider
 		strokeColors={[
@@ -82,7 +82,7 @@ export class Mapa extends React.Component {
 		]}
 		strokeWidth={6}
 	/>
-       
+
         </MapView>
 
       </View>
@@ -93,7 +93,7 @@ export class Mapa extends React.Component {
  <MapView.MapViewDirections
           origin={coordinates[0]}
           destination={coordinates[1]}
-          apikey={AIzaSyAIks4547oo8Dl8_flmn8yICsbKq1Oq3x8} 
+          apikey={AIzaSyAIks4547oo8Dl8_flmn8yICsbKq1Oq3x8}
           strokeWidth={4}
           strokeColor="#111111"
         />
