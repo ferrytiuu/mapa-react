@@ -1,7 +1,18 @@
 import React, {useEffect, useState} from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createStackNavigator} from '@react-navigation/stack';
-import {Alert, Button, Dimensions, StyleSheet, Text, View} from "react-native";
+import {
+    SafeAreaView,
+    Alert,
+    Button,
+    Dimensions,
+    FlatList,
+    StyleSheet,
+    Text,
+    View,
+    Pressable,
+    Modal
+} from "react-native";
 import MapView, {Marker} from "react-native-maps";
 import * as Location from 'expo-location';
 import * as SQLite from "expo-sqlite";
@@ -37,7 +48,12 @@ const styles = StyleSheet.create({
         height: box2_height
     },
     container: {
+        justifyContent: 'center',
         flex: 1,
+        marginLeft: 10,
+        marginRight: 10,
+        marginBottom: 10,
+        marginTop: 30,
         flexDirection: 'column',
         paddingTop: 30,
     },
@@ -52,8 +68,55 @@ const styles = StyleSheet.create({
     },
     box3: {
         backgroundColor: '#e3aa1a'
-    }
+    },
+    centeredView: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 22,
+    },
+    modalView: {
+        margin: 20,
+        backgroundColor: 'white',
+        borderRadius: 20,
+        padding: 35,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+    button: {
+        borderRadius: 20,
+        padding: 10,
+        elevation: 2,
+    },
+    buttonOpen: {
+        backgroundColor: '#F194FF',
+    },
+    buttonClose: {
+        backgroundColor: '#2196F3',
+    },
+    textStyle: {
+        color: 'white',
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
+    modalText: {
+        marginBottom: 15,
+        textAlign: 'center',
+    },
+    item: {
+        padding: 10,
+        fontSize: 18,
+        height: 44,
+    },
 });
+const db = SQLite.openDatabase("db5.db");
 
 function HomeScreen({navigation}) {
     return (
@@ -63,10 +126,70 @@ function HomeScreen({navigation}) {
                 title="Anar a Mapes"
                 onPress={() => navigation.navigate('Mapa')}
             />
+            <Button
+                title="Listar Markers"
+                onPress={() => navigation.navigate('ListarMarkers')}
+            />
         </View>
     );
 }
-const db = SQLite.openDatabase("db5.db");
+
+function ListarMarkers() {
+    const [items, setItems] = useState([]);
+    const [item, setItem] = useState({});
+
+    useEffect(() => {
+        db.transaction((tx) => {
+            tx.executeSql(
+                `select * from markers;`,
+                [],
+                (_, {rows: {_array}}) => setItems(_array)
+            );
+        });
+    }, []);
+
+    const Item = ({ title }) => (
+        <View style={styles.container}>
+            <Text style={styles.title}>{title}</Text>
+        </View>
+    );
+
+    const renderItem = ({ item }) => <Item title={item.title} />;
+    const getItem = (item) => {
+        //Function for click on an item
+        alert('Id : ' + item.id + ' Value : ' + item.Descripcion);
+    };
+    const [modalVisible, setModalVisible] = useState(false);
+
+    return (
+        <SafeAreaView style={styles.container}>
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={modalVisible}
+                onRequestClose={() => {
+                    Alert.alert('Modal has been closed.');
+                    setModalVisible(!modalVisible);
+                }}>
+                <View style={styles.centeredView}>
+                    <View style={styles.modalView}>
+                        <Text style={styles.modalText}>{item['Title']}</Text>
+                        <Pressable
+                            style={[styles.button, styles.buttonClose]}
+                            onPress={() => setModalVisible(!modalVisible)}>
+                            <Text style={styles.textStyle}>Hide Modal</Text>
+                        </Pressable>
+                    </View>
+                </View>
+            </Modal>
+            <FlatList keyExtractor={(item) => item.id.toString()}data={items}renderItem={({ item }) => (<Text style={styles.todo} onPress={function (){
+                setModalVisible(true);
+                setItem(item);
+            }} >{item.Title}</Text>)}/>
+        </SafeAreaView>
+    );
+}
+
 function Mapa() {
     const [items, setItems] = useState([]);
 
@@ -75,7 +198,7 @@ function Mapa() {
             tx.executeSql(
                 `select * from markers;`,
                 [],
-                (_, { rows: { _array } }) => setItems(_array)
+                (_, {rows: {_array}}) => setItems(_array)
             );
         });
     }, []);
@@ -110,8 +233,6 @@ function Mapa() {
     }
 
 
-
-
     console.log('Inicial');
     /*
     db.transaction(
@@ -126,25 +247,25 @@ function Mapa() {
             })
         }
     );*/
-/*
-    function actualizarPunto(e){
-        db.transaction(
-            tx => {
-                tx.executeSql("UPDATE table\n" +
-                    "SET column_1 = ?,\n"+
-                    "WHERE\n" +
-                    "    search_condition ", [], (_, {rows}) => {
-                    let resuttado = rows['_array'];
-                    console.log(resuttado);
-                    setCount(resuttado);
-                    console.log("Salida" + JSON.stringify(rows));
-                }, (t, error) => {
-                    console.log(error);
-                })
-            }
-        );
+    /*
+        function actualizarPunto(e){
+            db.transaction(
+                tx => {
+                    tx.executeSql("UPDATE table\n" +
+                        "SET latitude = ?,\n"+
+                        "SET Longitude = ?,\n"+
+                        "WHERE\n" +
+                        "    search_condition ", [], (_, {rows}) => {
+                        let resuttado = rows['_array'];
+                        console.log(resuttado);
+                        setCount(resuttado);
+                        console.log("Salida" + JSON.stringify(rows));
+                    }, (t, error) => {
+                        console.log(error);
+                    })
+                }
+            );*/
 
-    }*/
 
     console.log('Haz esto');
     console.log("Pd4ro");
@@ -165,7 +286,6 @@ function Mapa() {
                                 longitude: dealer["Longitude"],
                             }}
                             draggable
-                            onDragEnd={e => actualizarPunto(e.nativeEvent)}
                             title={dealer["Title"]}
                             description={dealer["Descripcion"]}
                         />
@@ -239,6 +359,7 @@ function App() {
             <Stack.Navigator initialRouteName="Inicio">
                 <Stack.Screen name="Inicio" component={HomeScreen}/>
                 <Stack.Screen name="Mapa" component={Mapa}/>
+                <Stack.Screen name="ListarMarkers" component={ListarMarkers}/>
             </Stack.Navigator>
         </NavigationContainer>
     );
