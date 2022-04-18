@@ -11,8 +11,13 @@ import {
     Text,
     View,
     Pressable,
-    Modal
+    Modal,
+    TouchableOpacity,
+    Image
 } from "react-native";
+import * as FileSystem from 'expo-file-system';
+import {useNavigation} from '@react-navigation/native';
+import {Camera} from 'expo-camera';
 import MapView, {Marker} from "react-native-maps";
 import * as Location from 'expo-location';
 import * as SQLite from "expo-sqlite";
@@ -115,6 +120,13 @@ const styles = StyleSheet.create({
         fontSize: 18,
         height: 44,
     },
+    camera: {
+        flex: 1,
+    },
+    logo: {
+        width: 66,
+        height: 58,
+    },
 });
 const db = SQLite.openDatabase("db5.db");
 
@@ -134,7 +146,114 @@ function HomeScreen({navigation}) {
     );
 }
 
+function Camara({route}) {
+    const { itemId } = route.params;
+    let camera;
+    const [hasPermission, setHasPermission] = useState(null);
+    const [type, setType] = useState(Camera.Constants.Type.back);
+
+    const [foto, setfoto] = useState({});
+
+    useEffect(() => {
+        (async () => {
+            const {status} = await Camera.requestCameraPermissionsAsync();
+            setHasPermission(status === 'granted');
+        })();
+    }, []);
+
+
+    async function ferFoto() {
+        try {
+            const data = await camera.takePictureAsync();
+            setfoto(data.uri);
+            // this.props.updateImage(data.uri);
+            console.log('Path to image: ' + JSON.stringify(data));
+
+            // 1. Check if "photos" directory exists, if not, create it
+            const USER_PHOTO_DIR = FileSystem.documentDirectory + 'photos';
+            const folderInfo = await FileSystem.getInfoAsync(USER_PHOTO_DIR);
+            if (!folderInfo.exists) {
+                await FileSystem.makeDirectoryAsync(USER_PHOTO_DIR);
+            }
+
+            // 2. Rename the image and define its new uri
+            const imageName = `${Date.now()}.jpg`;
+            const NEW_PHOTO_URI = `${USER_PHOTO_DIR}/${imageName}`;
+
+            // 3. Copy image to new location
+            await FileSystem.copyAsync({
+                from: data.uri,
+                to: NEW_PHOTO_URI
+            })
+                .then(() => {
+                    console.log(`File ${data.uri} was saved as ${NEW_PHOTO_URI}`);
+                    console.log("ItemID: "+itemId);
+                    db.transaction(
+                        tx => {
+                            tx.executeSql("update markers set imatge = ? where id = ?;", [NEW_PHOTO_URI,itemId], (_, {rows}) => {
+                                console.log("Salida" + JSON.stringify(rows));
+                            }, (t, error) => {
+                                console.log("Error quert 1 " + error);
+                            });
+                        }
+                    );
+                    db.transaction(
+                        tx => {
+                            tx.executeSql("select * from markers where id = ?", [itemId], (_, {rows}) => {
+                                console.log("Salida" + JSON.stringify(rows));
+                            }, (t, error) => {
+                                console.log(error);
+                            })
+                        }
+                    );
+
+                })
+                .catch(error => {console.error(error)})
+
+
+        } catch (err) {
+            console.log('err: ', err);
+        }
+
+    }
+
+    if (hasPermission === null) {
+        return <View/>;
+    }
+    if (hasPermission === false) {
+        return <Text>No access to camera</Text>;
+    }
+    return (
+        <View style={styles.container}>
+            <Pressable
+                style={[styles.button, styles.buttonClose]}
+                onPress={ferFoto}>
+                <Text style={styles.textStyle}>Fer foto</Text>
+            </Pressable>
+            <Camera style={styles.camera} type={type} ref={(r) => {
+                camera = r
+            }}>
+                <View style={styles.buttonContainer}>
+                    <TouchableOpacity
+                        style={styles.button}
+                        onPress={() => {
+                            setType(
+                                type === Camera.Constants.Type.back
+                                    ? Camera.Constants.Type.front
+                                    : Camera.Constants.Type.back
+                            );
+                        }}>
+                        <Text style={styles.text}> Flip </Text>
+                    </TouchableOpacity>
+                </View>
+            </Camera>
+        </View>
+    );
+
+}
+
 function ListarMarkers() {
+    const navigation = useNavigation();
     const [items, setItems] = useState([]);
     const [item, setItem] = useState({});
 
@@ -148,18 +267,20 @@ function ListarMarkers() {
         });
     }, []);
 
-    const Item = ({ title }) => (
+    const Item = ({title}) => (
         <View style={styles.container}>
             <Text style={styles.title}>{title}</Text>
         </View>
     );
 
-    const renderItem = ({ item }) => <Item title={item.title} />;
+    const renderItem = ({item}) => <Item title={item.title}/>;
     const getItem = (item) => {
         //Function for click on an item
         alert('Id : ' + item.id + ' Value : ' + item.Descripcion);
     };
     const [modalVisible, setModalVisible] = useState(false);
+
+    console.log(item['imatge']);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -179,13 +300,30 @@ function ListarMarkers() {
                             onPress={() => setModalVisible(!modalVisible)}>
                             <Text style={styles.textStyle}>Hide Modal</Text>
                         </Pressable>
+
+                        <Pressable
+                            style={[styles.button, styles.buttonClose]}
+                            onPress={() => navigation.navigate('Camara', {
+                                itemId: item['id'],
+                            })  }
+                        >
+                            <Text style={styles.textStyle}>Pantalla Home</Text>
+                        </Pressable>
+                        <Image
+                            style={styles.logo}
+                            source={{
+                                uri: item['imatge'],
+                            }}
+                        ></Image>
+
                     </View>
                 </View>
             </Modal>
-            <FlatList keyExtractor={(item) => item.id.toString()}data={items}renderItem={({ item }) => (<Text style={styles.todo} onPress={function (){
-                setModalVisible(true);
-                setItem(item);
-            }} >{item.Title}</Text>)}/>
+            <FlatList keyExtractor={(item) => item.id.toString()} data={items}
+                      renderItem={({item}) => (<Text style={styles.todo} onPress={function () {
+                          setModalVisible(true);
+                          setItem(item);
+                      }}>{item.Title}</Text>)}/>
         </SafeAreaView>
     );
 }
@@ -307,7 +445,7 @@ const Stack = createStackNavigator();
 function App() {
 
 
-    const db = SQLite.openDatabase("db5.db");
+    const db = SQLite.openDatabase("db6.db");
 
 
     db.transaction(tx => {
@@ -317,7 +455,7 @@ function App() {
             "Descripcion text," +
             "latitude real," +
             "Longitude real," +
-            "imatge blob" +
+            "imatge text" +
             ");"
             , [], (_, {rows}) => {
                 console.log("Salida" + JSON.stringify(rows));
@@ -360,6 +498,7 @@ function App() {
                 <Stack.Screen name="Inicio" component={HomeScreen}/>
                 <Stack.Screen name="Mapa" component={Mapa}/>
                 <Stack.Screen name="ListarMarkers" component={ListarMarkers}/>
+                <Stack.Screen name="Camara" component={Camara}/>
             </Stack.Navigator>
         </NavigationContainer>
     );
