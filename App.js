@@ -1,6 +1,12 @@
+<<<<<<< HEAD
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+=======
+import React, {useEffect, useState} from 'react';
+import {NavigationContainer,useFocusEffect} from '@react-navigation/native';
+import {createStackNavigator} from '@react-navigation/stack';
+>>>>>>> aab128511e88141a16948bcbc675cdf3ebfc08b2
 import {
   StatusBar,
   SafeAreaView,
