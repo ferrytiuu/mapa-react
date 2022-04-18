@@ -125,8 +125,8 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     logo: {
-        width: 66,
-        height: 58,
+        width: 330,
+        height: 290,
     }, containerFlat: {
         flex: 1,
         marginTop: StatusBar.currentHeight || 0,
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
         fontSize: 32,
     },
 });
-const db = SQLite.openDatabase("db7.db");
+const db = SQLite.openDatabase("db9.db");
 
 function HomeScreen({navigation}) {
     return (
@@ -297,6 +297,12 @@ function ListarMarkers() {
 
     console.log(item['imatge']);
 
+    function onNavigate () {
+        setModalVisible(!modalVisible), navigation.navigate('Camara', {
+            itemId: item['id'],
+        });
+    }
+
     return (
         <SafeAreaView style={styles.container}>
             <Modal
@@ -304,9 +310,9 @@ function ListarMarkers() {
                 transparent={true}
                 visible={modalVisible}
                 onRequestClose={() => {
-                    Alert.alert('Modal has been closed.');
                     setModalVisible(!modalVisible);
-                }}>
+                }}
+                onNavigate={this.onNavigate}>
                 <View style={styles.centeredView}>
                     <View style={styles.modalView}>
                         <Text style={styles.modalText}>{item['Title']}</Text>
@@ -318,16 +324,18 @@ function ListarMarkers() {
 
                         <Pressable
                             style={[styles.button, styles.buttonClose]}
+                            onPress={() => { onNavigate();
+
+                            }}
                         >
-                            <Text style={styles.textStyle}>Pantalla Home</Text>
+                            <Text style={styles.textStyle}>Fer foto</Text>
                         </Pressable>
                         <Image
                             style={styles.logo}
                             source={{
                                 uri: item['imatge'],
                             }}
-                        ></Image>r
-
+                        ></Image>
                     </View>
                 </View>
             </Modal>
@@ -423,7 +431,13 @@ function Mapa() {
         <View style={styles.container}>
             <MapView style={styles.mapStyle}
                      showsMyLocationButton={true}
-                     showsUserLocation={true}>
+                     showsUserLocation={true}
+                     initialRegion={{
+                         latitude: 41.38879,
+                         longitude: 2.15899,
+                         latitudeDelta: 0.2222,
+                         longitudeDelta: 0.0121
+                     }}>
                 {items.map(dealer => (
                     <MapView.Marker
                         key={dealer["id"]}
@@ -436,12 +450,15 @@ function Mapa() {
                         description={dealer["Descripcion"]}
                     />
                 ))}
-                {items.map((dealer,index,elarray) => (
+                {items.map((dealer, index, elarray) => (
                     <MapView.Polyline
-                        key={dealer["id"]+40}
+                        key={dealer["id"] + 40}
                         coordinates={[
-                            { latitude: dealer["latitude"], longitude:dealer["Longitude"] },
-                            { latitude: index+1 < elarray.length ? elarray[index]["latitude"] : elarray[index-1]["latitude"]   , longitude:index+1 < elarray.length ? elarray[index]["Longitude"] : elarray[index-1]["Longitude"] },
+                            {latitude: dealer["latitude"], longitude: dealer["Longitude"]},
+                            {
+                                latitude: index + 1 >= elarray.length ? elarray[elarray.length - 1]["latitude"] : elarray[index + 1]["latitude"],
+                                longitude: index + 1 >= elarray.length ? elarray[elarray.length - 1]["Longitude"] : elarray[index + 1]["Longitude"]
+                            },
 
                         ]}
                         strokeColor="#000" // fallback for when strokeColors is not supported by the map-provider
@@ -471,7 +488,7 @@ const Stack = createStackNavigator();
 function App() {
 
 
-    const db = SQLite.openDatabase("db7.db");
+    const db = SQLite.openDatabase("db9.db");
 
 
     db.transaction(tx => {
