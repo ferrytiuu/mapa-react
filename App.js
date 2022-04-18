@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {NavigationContainer} from '@react-navigation/native';
+import {NavigationContainer,useFocusEffect} from '@react-navigation/native';
 import {createStackNavigator} from '@react-navigation/stack';
 import {
     StatusBar,
@@ -302,6 +302,20 @@ function ListarMarkers() {
             itemId: item['id'],
         });
     }
+    useFocusEffect(
+        React.useCallback(() => {
+            //alert('Screen was focused');
+            // Do something when the screen is focused
+            db.transaction((tx) => {
+                tx.executeSql(
+                    `select * from markers;`,
+                    [],
+                    (_, {rows: {_array}}) => setItems(_array)
+                );
+            });
+
+        }, [])
+    );
 
     return (
         <SafeAreaView style={styles.container}>
